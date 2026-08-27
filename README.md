@@ -158,6 +158,13 @@ git push origin main
    - **Privacy Policy URL**: `https://SEU-PROJETO.vercel.app/privacy`
 3. Pronto! Entre numa call → Atividades 🚀 → **Fornight Vision**.
 
+### Verificação antes de testar no Discord
+
+- Abra a URL de produção em uma janela anônima. Ela deve mostrar o Fornight Vision, e não **Login – Vercel**. Se aparecer login, vá em **Vercel → Settings → Deployment Protection** e desative a proteção para o deployment de produção, ou use um domínio público sem autenticação.
+- Em **Vercel → Deployments**, confira se o deployment mais recente foi criado depois de adicionar as variáveis `VITE_*`. Essas variáveis entram no bundle durante o build; apenas cadastrá-las não altera um deployment antigo.
+- Abra o arquivo JavaScript carregado pela página e confirme que o deployment é o deste repositório. Se aparecer `/_next/static/...`, o domínio está apontando para outro projeto Next.js; o build deste projeto deve carregar `/_assets/...` ou `/assets/...` e exibir o Fornight Vision.
+- No Discord, o **URL Mapping** deve apontar exatamente para essa URL pública. A Activity deve ser aberta pelo botão **Atividades** dentro da call; abrir a URL em uma aba comum não fornece `frame_id` nem `channelId`.
+
 ### Link avulso
 
 Um link como `https://SEU-PROJETO.vercel.app/?room=...` não consegue descobrir ou entrar na sua call do Discord. Ele funciona como página de espectador e entra diretamente na sala LiveKit. Para transmitir dentro de um servidor ou DM, abra a atividade pelo botão **Atividades** dentro da call; o Discord fornecerá o `frame_id` e o `channelId` necessários.
