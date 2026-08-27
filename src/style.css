@@ -1,14 +1,16 @@
 :root {
-  --bg: #1e1f22;
-  --bg-2: #2b2d31;
-  --bg-3: #313338;
+  --bg: #0f0a1e;
+  --bg-2: #1a1230;
+  --bg-3: #241a3d;
   --text: #f2f3f5;
   --muted: #b5bac1;
-  --accent: #5865f2;
-  --accent-hover: #4752c4;
+  --accent: #9b59f6;
+  --accent-2: #6c5ce7;
+  --accent-hover: #8e44ad;
   --green: #23a55a;
   --red: #da373c;
-  --border: #3f4147;
+  --border: #3a2d5c;
+  --glow: rgba(155, 89, 246, 0.35);
 }
 
 * {
@@ -22,12 +24,19 @@ body {
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
+  background-image: url('/src/img/background_app.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
 }
 
 #app {
   max-width: 720px;
   margin: 0 auto;
   padding: 20px;
+  min-height: 100vh;
+  background: rgba(15, 10, 30, 0.82);
+  backdrop-filter: blur(6px);
 }
 
 header {
@@ -42,16 +51,24 @@ header {
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
-.logo {
-  font-size: 28px;
+.logo-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  object-fit: cover;
+  box-shadow: 0 0 12px var(--glow);
 }
 
 h1 {
   font-size: 22px;
   font-weight: 700;
+  background: linear-gradient(90deg, #c39bff, #9b59f6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .status {
@@ -60,6 +77,7 @@ h1 {
   padding: 6px 12px;
   border-radius: 8px;
   background: var(--bg-2);
+  border: 1px solid var(--border);
 }
 
 .status.ok {
@@ -91,19 +109,43 @@ h1 {
   letter-spacing: 0.5px;
 }
 
+.select-wrap {
+  position: relative;
+}
+
+.select-wrap::after {
+  content: '▾';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--accent);
+  pointer-events: none;
+  font-size: 14px;
+}
+
 select {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
   background: var(--bg-2);
   color: var(--text);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 10px 12px;
+  border-radius: 10px;
+  padding: 11px 34px 11px 12px;
   font-size: 14px;
   cursor: pointer;
   outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+select:hover {
+  border-color: var(--accent);
 }
 
 select:focus {
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--glow);
 }
 
 select:disabled {
@@ -115,10 +157,11 @@ select:disabled {
   position: relative;
   aspect-ratio: 16 / 9;
   background: #000;
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
   border: 1px solid var(--border);
   margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 .video-container video {
@@ -138,10 +181,16 @@ select:disabled {
   gap: 10px;
   color: var(--muted);
   font-size: 15px;
+  background: linear-gradient(135deg, #1a1230, #241a3d);
 }
 
-.placeholder span {
-  font-size: 48px;
+.placeholder-img {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 16px;
+  opacity: 0.8;
+  box-shadow: 0 0 20px var(--glow);
 }
 
 .actions {
@@ -152,12 +201,12 @@ select:disabled {
 
 button {
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 12px 20px;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: all 0.15s ease;
 }
 
 button:disabled {
@@ -166,13 +215,15 @@ button:disabled {
 }
 
 button.primary {
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: #fff;
   flex: 1;
+  box-shadow: 0 4px 14px var(--glow);
 }
 
 button.primary:hover:not(:disabled) {
-  background: var(--accent-hover);
+  background: linear-gradient(135deg, var(--accent-hover), var(--accent-2));
+  transform: translateY(-1px);
 }
 
 button.danger {
@@ -187,7 +238,7 @@ button.danger:hover:not(:disabled) {
 .share {
   background: var(--bg-2);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 16px;
 }
 
@@ -206,7 +257,7 @@ button.danger:hover:not(:disabled) {
   background: var(--bg-3);
   color: var(--text);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 10px 12px;
   font-size: 13px;
   outline: none;
@@ -214,16 +265,17 @@ button.danger:hover:not(:disabled) {
 
 .share-row input:focus {
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--glow);
 }
 
 .share-row button {
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: #fff;
   padding: 10px 16px;
 }
 
 .share-row button:hover {
-  background: var(--accent-hover);
+  background: linear-gradient(135deg, var(--accent-hover), var(--accent-2));
 }
 
 .hint {
@@ -251,6 +303,44 @@ button.danger:hover:not(:disabled) {
 .legal a:hover {
   color: var(--text);
   text-decoration: underline;
+}
+
+/* Overlay de erro */
+.error-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 10, 30, 0.9);
+  z-index: 1000;
+  padding: 20px;
+}
+
+.error-box {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 28px;
+  max-width: 420px;
+  text-align: center;
+}
+
+.error-box h2 {
+  color: var(--red);
+  margin-bottom: 12px;
+}
+
+.error-box p {
+  color: var(--muted);
+  margin-bottom: 20px;
+  font-size: 14px;
+  word-break: break-word;
+}
+
+.error-box button {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #fff;
 }
 
 @media (max-width: 600px) {

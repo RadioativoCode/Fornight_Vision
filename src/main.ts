@@ -5,11 +5,30 @@ import './style.css';
 const CLIENT_ID = import.meta.env.VITE_DISCORD_CLIENT_ID as string;
 const LIVEKIT_URL = import.meta.env.VITE_LIVEKIT_URL as string;
 
+// ---- Overlay de erro (evita tela branca) ----
+const errorOverlay = document.getElementById('error-overlay') as HTMLDivElement;
+const errorMessageEl = document.getElementById('error-message') as HTMLParagraphElement;
+const errorReloadBtn = document.getElementById('error-reload') as HTMLButtonElement;
+
+function showError(message: string) {
+  console.error('[Fornight Vision]', message);
+  errorMessageEl.textContent = message;
+  errorOverlay.hidden = false;
+}
+
+errorReloadBtn.addEventListener('click', () => window.location.reload());
+
+// Captura erros globais para nunca deixar tela branca
+window.addEventListener('error', (e) => showError(e.message || 'Erro desconhecido'));
+window.addEventListener('unhandledrejection', (e) => {
+  showError((e.reason as Error)?.message || 'Erro desconhecido');
+});
+
 if (!CLIENT_ID) {
-  throw new Error('VITE_DISCORD_CLIENT_ID não configurado. Crie um arquivo .env (veja .env.example).');
+  showError('VITE_DISCORD_CLIENT_ID não configurado. Adicione as variáveis de ambiente no Vercel.');
 }
 if (!LIVEKIT_URL) {
-  throw new Error('VITE_LIVEKIT_URL não configurado. Crie um arquivo .env (veja .env.example).');
+  showError('VITE_LIVEKIT_URL não configurado. Adicione as variáveis de ambiente no Vercel.');
 }
 
 const discordSdk = new DiscordSDK(CLIENT_ID);
@@ -55,7 +74,8 @@ async function setupDiscord() {
     response_type: 'code',
     state: '',
     prompt: 'none',
-    scope: ['identify', 'guilds'],
+    // 'identify' funciona em servidores e DMs. 'guilds' pode falhar em chamadas privadas.
+    scope: ['identify'],
   });
 
   const response = await fetch('/api/token', {
@@ -219,6 +239,8 @@ copyBtn.addEventListener('click', async () => {
     }
   } catch (err) {
     console.error(err);
-    setStatus(`Falha na inicialização: ${(err as Error).message}`, 'err');
+    const msg = (err as Error)?.message || 'Erro desconhecido';
+    setStatus(`Falha na inicialização: ${msg}`, 'err');
+    showError(msg);
   }
 })();

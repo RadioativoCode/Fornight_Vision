@@ -9,7 +9,7 @@
     <div id="app">
       <header>
         <div class="brand">
-          <span class="logo">🎥</span>
+          <img src="/src/img/logo.png" alt="Fornight Vision" class="logo-img" />
           <h1>Fornight Vision</h1>
         </div>
         <div id="status" class="status">Conectando ao Discord...</div>
@@ -19,34 +19,40 @@
         <section class="controls">
           <div class="control-group">
             <label for="source">Fonte</label>
-            <select id="source">
-              <option value="screen" selected>🖥️ Tela</option>
-              <option value="camera">📷 Câmera</option>
-            </select>
+            <div class="select-wrap">
+              <select id="source">
+                <option value="screen" selected>🖥️ Tela</option>
+                <option value="camera">📷 Câmera</option>
+              </select>
+            </div>
           </div>
           <div class="control-group">
             <label for="fps">FPS</label>
-            <select id="fps">
-              <option value="15">15</option>
-              <option value="30" selected>30</option>
-              <option value="60">60</option>
-            </select>
+            <div class="select-wrap">
+              <select id="fps">
+                <option value="15">15</option>
+                <option value="30" selected>30</option>
+                <option value="60">60</option>
+              </select>
+            </div>
           </div>
           <div class="control-group">
             <label for="quality">Qualidade</label>
-            <select id="quality">
-              <option value="1000000">1 Mbps</option>
-              <option value="2500000" selected>2.5 Mbps</option>
-              <option value="5000000">5 Mbps</option>
-              <option value="8000000">8 Mbps</option>
-            </select>
+            <div class="select-wrap">
+              <select id="quality">
+                <option value="1000000">1 Mbps</option>
+                <option value="2500000" selected>2.5 Mbps</option>
+                <option value="5000000">5 Mbps</option>
+                <option value="8000000">8 Mbps</option>
+              </select>
+            </div>
           </div>
         </section>
 
         <div class="video-container">
           <video id="video" autoplay playsinline muted></video>
           <div id="placeholder" class="placeholder">
-            <span>🖥️</span>
+            <img src="/src/img/banner_thumb.png" alt="" class="placeholder-img" />
             <p>A transmissão aparecerá aqui</p>
           </div>
         </div>
@@ -75,6 +81,16 @@
         <a href="/privacy" target="_blank" rel="noopener">Política de Privacidade</a>
       </footer>
     </div>
+
+    <!-- Overlay de erro (evita tela branca) -->
+    <div id="error-overlay" class="error-overlay" hidden>
+      <div class="error-box">
+        <h2>⚠️ Algo deu errado</h2>
+        <p id="error-message">Ocorreu um erro ao iniciar o aplicativo.</p>
+        <button id="error-reload">Tentar novamente</button>
+      </div>
+    </div>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
