@@ -81,6 +81,8 @@ VITE_LIVEKIT_URL=wss://SEU_PROJETO.livekit.cloud
 >
 > ⚠️ O **LiveKit API Secret** é obrigatório (aba **Keys** no LiveKit Cloud). Sem ele, o servidor não consegue gerar os tokens de transmissão.
 
+> ⚠️ No Vercel, `VITE_DISCORD_CLIENT_ID` e `VITE_LIVEKIT_URL` precisam estar cadastradas antes do build. Marque **Production**, **Preview** e **Development** e faça um novo **Redeploy** depois de salvar. O arquivo `.env` local não é enviado automaticamente ao Vercel.
+
 ### 4. Rodar em desenvolvimento
 ```bash
 npm run dev:all
@@ -155,6 +157,10 @@ git push origin main
    - **Terms of Service URL**: `https://SEU-PROJETO.vercel.app/terms`
    - **Privacy Policy URL**: `https://SEU-PROJETO.vercel.app/privacy`
 3. Pronto! Entre numa call → Atividades 🚀 → **Fornight Vision**.
+
+### Link avulso
+
+Um link como `https://SEU-PROJETO.vercel.app/?room=...` não consegue descobrir ou entrar na sua call do Discord. Ele funciona como página de espectador e entra diretamente na sala LiveKit. Para transmitir dentro de um servidor ou DM, abra a atividade pelo botão **Atividades** dentro da call; o Discord fornecerá o `frame_id` e o `channelId` necessários.
 
 ---
 

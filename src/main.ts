@@ -2,8 +2,9 @@ import { DiscordSDK } from '@discord/embedded-app-sdk';
 import { Room } from 'livekit-client';
 import './style.css';
 
-const CLIENT_ID = import.meta.env.VITE_DISCORD_CLIENT_ID as string;
-const LIVEKIT_URL = import.meta.env.VITE_LIVEKIT_URL as string;
+const CLIENT_ID = import.meta.env.VITE_DISCORD_CLIENT_ID as string | undefined;
+const LIVEKIT_URL = (import.meta.env.VITE_LIVEKIT_URL as string | undefined) ?? '';
+const isDiscordActivity = new URLSearchParams(window.location.search).has('frame_id');
 
 // ---- Overlay de erro (evita tela branca) ----
 const errorOverlay = document.getElementById('error-overlay') as HTMLDivElement;
@@ -24,14 +25,8 @@ window.addEventListener('unhandledrejection', (e) => {
   showError((e.reason as Error)?.message || 'Erro desconhecido');
 });
 
-if (!CLIENT_ID) {
-  showError('VITE_DISCORD_CLIENT_ID não configurado. Adicione as variáveis de ambiente no Vercel.');
-}
-if (!LIVEKIT_URL) {
-  showError('VITE_LIVEKIT_URL não configurado. Adicione as variáveis de ambiente no Vercel.');
-}
-
-const discordSdk = new DiscordSDK(CLIENT_ID);
+// O SDK exige frame_id e só deve ser criado dentro de uma Discord Activity.
+const discordSdk = isDiscordActivity && CLIENT_ID ? new DiscordSDK(CLIENT_ID) : null;
 
 // ---- Elementos da UI ----
 const videoEl = document.getElementById('video') as HTMLVideoElement;
@@ -66,6 +61,18 @@ function setBroadcasting(on: boolean) {
 
 // ---- Autenticação com o Discord ----
 async function setupDiscord() {
+  if (!LIVEKIT_URL) {
+    throw new Error('VITE_LIVEKIT_URL não configurado no Vercel. Adicione a variável e faça um novo redeploy.');
+  }
+
+  // Links públicos não têm contexto de call; eles entram diretamente na sala LiveKit.
+  if (!isDiscordActivity || !discordSdk || !CLIENT_ID) {
+    identity = `visitante-${crypto.randomUUID().slice(0, 8)}`;
+    channelId = new URLSearchParams(window.location.search).get('room') ?? 'sala-publica';
+    setStatus('Modo espectador público', 'ok');
+    return;
+  }
+
   await discordSdk.ready();
   setStatus('Autorizando com o Discord...');
 
@@ -161,7 +168,7 @@ async function startBroadcast() {
     );
 
     // Gera o link de compartilhamento
-    const shareUrl = `${window.location.origin}?room=${channelId}`;
+    const shareUrl = `${window.location.origin}?room=${encodeURIComponent(channelId)}`;
     shareLinkEl.value = shareUrl;
   } catch (err) {
     console.error(err);
