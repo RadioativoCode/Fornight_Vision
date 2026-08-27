@@ -1,0 +1,27 @@
+{
+  "name": "fornight-vision",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Discord Activity para transmitir tela e câmera dentro de calls (GoLive style)",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "server": "node server/index.js",
+    "dev:all": "concurrently -k \"npm:server\" \"npm:dev\""
+  },
+  "dependencies": {
+    "@discord/embedded-app-sdk": "^1.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "livekit-client": "^2.5.0",
+    "livekit-server-sdk": "^2.8.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.4.5",
+    "vite": "^5.4.0"
+  }
+}

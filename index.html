@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fornight Vision</title>
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <div class="brand">
+          <span class="logo">🎥</span>
+          <h1>Fornight Vision</h1>
+        </div>
+        <div id="status" class="status">Conectando ao Discord...</div>
+      </header>
+
+      <main>
+        <section class="controls">
+          <div class="control-group">
+            <label for="source">Fonte</label>
+            <select id="source">
+              <option value="screen" selected>🖥️ Tela</option>
+              <option value="camera">📷 Câmera</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="fps">FPS</label>
+            <select id="fps">
+              <option value="15">15</option>
+              <option value="30" selected>30</option>
+              <option value="60">60</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="quality">Qualidade</label>
+            <select id="quality">
+              <option value="1000000">1 Mbps</option>
+              <option value="2500000" selected>2.5 Mbps</option>
+              <option value="5000000">5 Mbps</option>
+              <option value="8000000">8 Mbps</option>
+            </select>
+          </div>
+        </section>
+
+        <div class="video-container">
+          <video id="video" autoplay playsinline muted></video>
+          <div id="placeholder" class="placeholder">
+            <span>🖥️</span>
+            <p>A transmissão aparecerá aqui</p>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="start" class="primary">▶ Iniciar Transmissão</button>
+          <button id="stop" class="danger" disabled>■ Parar</button>
+        </div>
+
+        <section class="share">
+          <h2>🔗 Compartilhar</h2>
+          <div class="share-row">
+            <input id="share-link" readonly placeholder="Inicie a transmissão para gerar o link" />
+            <button id="copy">Copiar</button>
+          </div>
+          <p class="hint">
+            Envie o link para quem quiser assistir, ou use o botão nativo do Discord
+            <em>"Convidar para a Atividade"</em> dentro da call.
+          </p>
+        </section>
+      </main>
+
+      <footer class="legal">
+        <a href="/terms" target="_blank" rel="noopener">Termos de Serviço</a>
+        <span>•</span>
+        <a href="/privacy" target="_blank" rel="noopener">Política de Privacidade</a>
+      </footer>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
