@@ -4,6 +4,7 @@ import './style.css';
 
 const CLIENT_ID = import.meta.env.VITE_DISCORD_CLIENT_ID as string | undefined;
 const LIVEKIT_URL = (import.meta.env.VITE_LIVEKIT_URL as string | undefined) ?? '';
+const PUBLIC_APP_URL = (import.meta.env.VITE_PUBLIC_APP_URL as string | undefined)?.replace(/\/$/, '') ?? '';
 const isDiscordActivity = new URLSearchParams(window.location.search).has('frame_id');
 const livekitUrl = isDiscordActivity
   ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/livekit`
@@ -248,10 +249,14 @@ async function startBroadcast() {
     const bitrate = Number(qualitySelect.value);
 
     if (selectedSource !== 'camera' && discordSdk) {
-      const captureUrl = `${window.location.origin}/capture?room=${encodeURIComponent(channelId)}&identity=${encodeURIComponent(identity)}&mode=${selectedSource}&fps=${fps}&quality=${bitrate}`;
+      if (!PUBLIC_APP_URL) {
+        throw new Error('VITE_PUBLIC_APP_URL não configurado. Adicione o domínio público do Vercel e faça um novo redeploy.');
+      }
+      const captureOrigin = PUBLIC_APP_URL;
+      const captureUrl = `${captureOrigin}/capture?room=${encodeURIComponent(channelId)}&identity=${encodeURIComponent(identity)}&mode=${selectedSource}&fps=${fps}&quality=${bitrate}`;
       await discordSdk.commands.openExternalLink({ url: captureUrl });
       setStatus('Capturador aberto em uma aba externa. Mantenha-o aberto durante a transmissão.', 'ok');
-      shareLinkEl.value = `${window.location.origin}?room=${encodeURIComponent(channelId)}`;
+      shareLinkEl.value = `${captureOrigin}?room=${encodeURIComponent(channelId)}`;
       return;
     }
 
@@ -310,7 +315,8 @@ async function startBroadcast() {
     }
 
     // Gera o link de compartilhamento
-    const shareUrl = `${window.location.origin}?room=${encodeURIComponent(channelId)}`;
+    const shareOrigin = PUBLIC_APP_URL || window.location.origin;
+    const shareUrl = `${shareOrigin}?room=${encodeURIComponent(channelId)}`;
     shareLinkEl.value = shareUrl;
   } catch (err) {
     console.error(err);
