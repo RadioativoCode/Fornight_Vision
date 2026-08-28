@@ -117,9 +117,32 @@ h1 {
 
 .controls {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 2fr 1fr 1fr;
   gap: 12px;
   margin-bottom: 20px;
+}
+
+.source-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.source-option {
+  min-height: 42px;
+  padding: 8px 10px;
+  background: var(--bg-2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.source-option:hover:not(:disabled),
+.source-option.active {
+  color: var(--text);
+  border-color: var(--accent);
+  background: linear-gradient(135deg, rgba(155, 89, 246, 0.28), var(--bg-2));
+  box-shadow: 0 0 0 2px rgba(155, 89, 246, 0.12);
 }
 
 .control-group {
@@ -196,6 +219,34 @@ select:disabled {
   height: 100%;
   object-fit: contain;
   display: none;
+}
+
+.video-container .camera-overlay {
+  position: absolute;
+  left: 24px;
+  top: 24px;
+  z-index: 3;
+  width: 24%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  display: block;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--accent);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.video-container .camera-overlay[hidden] {
+  display: none;
+}
+
+.video-container .camera-overlay.dragging {
+  cursor: grabbing;
+  border-color: #c39bff;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6), 0 0 0 2px var(--accent);
 }
 
 .placeholder {
@@ -332,6 +383,120 @@ button.danger:hover:not(:disabled) {
   text-decoration: underline;
 }
 
+.camera-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 900;
+  padding: 20px;
+  background: rgba(8, 5, 18, 0.82);
+  backdrop-filter: blur(8px);
+}
+
+.camera-dialog {
+  width: min(520px, 100%);
+  max-height: min(720px, 90vh);
+  overflow: auto;
+  padding: 22px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 18px 70px rgba(0, 0, 0, 0.48), 0 0 30px var(--glow);
+}
+
+.modal-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.modal-heading h2 {
+  margin-top: 4px;
+  font-size: 21px;
+}
+
+.eyebrow {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.icon-button {
+  padding: 4px 10px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 26px;
+}
+
+.modal-copy {
+  margin: 8px 0 16px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.camera-list {
+  display: grid;
+  gap: 8px;
+  max-height: 190px;
+  overflow: auto;
+}
+
+.camera-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px;
+  color: var(--text);
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  text-align: left;
+  font-size: 13px;
+}
+
+.camera-option:hover,
+.camera-option.selected {
+  border-color: var(--accent);
+  background: rgba(155, 89, 246, 0.18);
+}
+
+.camera-icon {
+  font-size: 20px;
+}
+
+.camera-preview {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  display: block;
+  margin-top: 16px;
+  object-fit: cover;
+  border-radius: 10px;
+  background: #08060f;
+  border: 1px solid var(--border);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.secondary {
+  background: var(--bg-3);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.secondary:hover {
+  border-color: var(--accent);
+}
+
 /* Overlay de erro */
 .error-overlay {
   position: fixed;
@@ -372,6 +537,9 @@ button.danger:hover:not(:disabled) {
 
 @media (max-width: 600px) {
   .controls {
+    grid-template-columns: 1fr;
+  }
+  .source-options {
     grid-template-columns: 1fr;
   }
   header {

@@ -31,21 +31,32 @@ const discordSdk = isDiscordActivity && CLIENT_ID ? new DiscordSDK(CLIENT_ID) : 
 
 // ---- Elementos da UI ----
 const videoEl = document.getElementById('video') as HTMLVideoElement;
+const cameraOverlayEl = document.getElementById('camera-overlay') as HTMLVideoElement;
 const placeholderEl = document.getElementById('placeholder') as HTMLDivElement;
 const startBtn = document.getElementById('start') as HTMLButtonElement;
 const stopBtn = document.getElementById('stop') as HTMLButtonElement;
-const sourceSelect = document.getElementById('source') as HTMLSelectElement;
+const sourceButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-source]'));
 const fpsSelect = document.getElementById('fps') as HTMLSelectElement;
 const qualitySelect = document.getElementById('quality') as HTMLSelectElement;
 const statusEl = document.getElementById('status') as HTMLDivElement;
 const shareLinkEl = document.getElementById('share-link') as HTMLInputElement;
 const copyBtn = document.getElementById('copy') as HTMLButtonElement;
+const cameraModal = document.getElementById('camera-modal') as HTMLDivElement;
+const cameraList = document.getElementById('camera-list') as HTMLDivElement;
+const cameraPreview = document.getElementById('camera-preview') as HTMLVideoElement;
+const closeCameraBtn = document.getElementById('close-camera') as HTMLButtonElement;
+const cancelCameraBtn = document.getElementById('cancel-camera') as HTMLButtonElement;
+const confirmCameraBtn = document.getElementById('confirm-camera') as HTMLButtonElement;
 
 // ---- Estado ----
 let room: Room | null = null;
 let localStream: MediaStream | null = null;
 let identity = 'espectador';
 let channelId = 'sala';
+let selectedSource: 'screen' | 'camera' | 'both' = 'screen';
+let selectedCameraId = '';
+let cameraPreviewStream: MediaStream | null = null;
+let cameraOverlayPosition = { x: 24, y: 24 };
 
 function setStatus(text: string, kind: 'ok' | 'err' | 'info' = 'info') {
   statusEl.textContent = text;
@@ -68,7 +79,7 @@ async function withTimeout<T>(operation: Promise<T>, label: string, timeoutMs = 
 function setBroadcasting(on: boolean) {
   startBtn.disabled = on;
   stopBtn.disabled = !on;
-  sourceSelect.disabled = on;
+  sourceButtons.forEach((button) => { button.disabled = on; });
   fpsSelect.disabled = on;
   qualitySelect.disabled = on;
 }
@@ -127,16 +138,73 @@ async function setupDiscord() {
 }
 
 // ---- Captura da fonte (tela ou câmera) usando APIs nativas ----
-async function captureStream(source: 'screen' | 'camera', fps: number): Promise<MediaStream> {
-  if (source === 'screen') {
-    return await navigator.mediaDevices.getDisplayMedia({
-      video: { frameRate: { ideal: fps } },
-      audio: false,
-    });
-  }
-  return await navigator.mediaDevices.getUserMedia({
+async function captureScreen(fps: number): Promise<MediaStream> {
+  // A lista de monitores e janelas é fornecida pelo seletor nativo do navegador/Discord.
+  return await navigator.mediaDevices.getDisplayMedia({
     video: { frameRate: { ideal: fps } },
     audio: false,
+  });
+}
+
+async function captureCamera(fps: number): Promise<MediaStream> {
+  return await navigator.mediaDevices.getUserMedia({
+    video: {
+      ...(selectedCameraId ? { deviceId: { exact: selectedCameraId } } : {}),
+      frameRate: { ideal: fps },
+    },
+    audio: false,
+  });
+}
+
+async function openCameraModal(fps: number): Promise<boolean> {
+  if (!navigator.mediaDevices?.enumerateDevices) {
+    throw new Error('Este ambiente não permite listar câmeras.');
+  }
+
+  let devices = (await navigator.mediaDevices.enumerateDevices()).filter((device) => device.kind === 'videoinput');
+  if (!devices.length || devices.every((device) => !device.label)) {
+    const permissionStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    permissionStream.getTracks().forEach((track) => track.stop());
+    devices = (await navigator.mediaDevices.enumerateDevices()).filter((device) => device.kind === 'videoinput');
+  }
+
+  cameraList.replaceChildren();
+  devices.forEach((device, index) => {
+    const option = document.createElement('button');
+    option.type = 'button';
+    option.className = 'camera-option';
+    option.dataset.deviceId = device.deviceId;
+    option.innerHTML = `<span class="camera-icon">📷</span><span>${device.label || `Câmera ${index + 1}`}</span>`;
+    option.addEventListener('click', async () => {
+      selectedCameraId = device.deviceId;
+      cameraList.querySelectorAll('.camera-option').forEach((item) => item.classList.remove('selected'));
+      option.classList.add('selected');
+      cameraPreviewStream?.getTracks().forEach((track) => track.stop());
+      cameraPreviewStream = await captureCamera(fps);
+      cameraPreview.srcObject = cameraPreviewStream;
+      confirmCameraBtn.disabled = false;
+    });
+    cameraList.append(option);
+  });
+
+  if (!devices.length) {
+    throw new Error('Nenhuma câmera foi encontrada neste dispositivo.');
+  }
+
+  cameraModal.hidden = false;
+  return await new Promise<boolean>((resolve) => {
+    const finish = (confirmed: boolean) => {
+      cameraModal.hidden = true;
+      cameraPreviewStream?.getTracks().forEach((track) => track.stop());
+      cameraPreviewStream = null;
+      confirmCameraBtn.disabled = true;
+      resolve(confirmed);
+    };
+    const confirm = () => finish(true);
+    const cancel = () => finish(false);
+    confirmCameraBtn.onclick = confirm;
+    closeCameraBtn.onclick = cancel;
+    cancelCameraBtn.onclick = cancel;
   });
 }
 
@@ -144,20 +212,36 @@ async function captureStream(source: 'screen' | 'camera', fps: number): Promise<
 async function startBroadcast() {
   try {
     setStatus('Capturando fonte...');
-    const source = sourceSelect.value as 'screen' | 'camera';
     const fps = Number(fpsSelect.value);
     const bitrate = Number(qualitySelect.value);
 
-    localStream = await captureStream(source, fps);
-    const videoTrack = localStream.getVideoTracks()[0];
-    if (!videoTrack) {
-      throw new Error('Nenhum track de vídeo capturado');
+    if (selectedSource !== 'screen') {
+      const confirmed = await openCameraModal(fps);
+      if (!confirmed) {
+        setStatus('Seleção cancelada', 'info');
+        return;
+      }
     }
+
+    const screenStream = selectedSource === 'camera' ? null : await captureScreen(fps);
+    const cameraStream = selectedSource === 'screen' ? null : await captureCamera(fps);
+    localStream = new MediaStream([
+      ...(screenStream?.getVideoTracks() ?? []),
+      ...(cameraStream?.getVideoTracks() ?? []),
+    ]);
+    const videoTrack = screenStream?.getVideoTracks()[0] ?? cameraStream?.getVideoTracks()[0];
+    if (!videoTrack) throw new Error('Nenhum vídeo foi capturado');
+    const cameraTrack = cameraStream?.getVideoTracks()[0];
 
     // Preview local
     videoEl.srcObject = localStream;
     placeholderEl.style.display = 'none';
     videoEl.style.display = 'block';
+    cameraOverlayEl.srcObject = cameraStream;
+    cameraOverlayEl.hidden = selectedSource !== 'both';
+    cameraOverlayPosition = { x: 24, y: 24 };
+    cameraOverlayEl.style.left = `${cameraOverlayPosition.x}px`;
+    cameraOverlayEl.style.top = `${cameraOverlayPosition.y}px`;
 
     setStatus('Conectando à sala de transmissão...');
 
@@ -185,9 +269,17 @@ async function startBroadcast() {
 
     setBroadcasting(true);
     setStatus(
-      `Transmitindo ${source === 'screen' ? 'tela' : 'câmera'} • ${fps} FPS • ${(bitrate / 1_000_000).toFixed(1)} Mbps`,
+      `Transmitindo ${selectedSource === 'both' ? 'tela + câmera' : selectedSource} • ${fps} FPS • ${(bitrate / 1_000_000).toFixed(1)} Mbps`,
       'ok',
     );
+    if (cameraTrack && cameraTrack !== videoTrack) {
+      await room.localParticipant.publishTrack(cameraTrack, {
+        videoEncoding: {
+          maxBitrate: Math.floor(bitrate / 2),
+          maxFramerate: fps,
+        },
+      });
+    }
 
     // Gera o link de compartilhamento
     const shareUrl = `${window.location.origin}?room=${encodeURIComponent(channelId)}`;
@@ -209,6 +301,8 @@ async function stopBroadcast() {
     localStream = null;
   }
   videoEl.srcObject = null;
+  cameraOverlayEl.srcObject = null;
+  cameraOverlayEl.hidden = true;
   videoEl.style.display = 'none';
   placeholderEl.style.display = 'flex';
   shareLinkEl.value = '';
@@ -250,6 +344,42 @@ async function watchStream() {
 // ---- Eventos ----
 startBtn.addEventListener('click', startBroadcast);
 stopBtn.addEventListener('click', stopBroadcast);
+
+sourceButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    selectedSource = button.dataset.source as 'screen' | 'camera' | 'both';
+    sourceButtons.forEach((item) => item.classList.toggle('active', item === button));
+  });
+});
+
+let draggingCamera = false;
+let dragOffset = { x: 0, y: 0 };
+
+cameraOverlayEl.addEventListener('pointerdown', (event) => {
+  if (cameraOverlayEl.hidden) return;
+  draggingCamera = true;
+  dragOffset = {
+    x: event.clientX - cameraOverlayEl.offsetLeft,
+    y: event.clientY - cameraOverlayEl.offsetTop,
+  };
+  cameraOverlayEl.setPointerCapture(event.pointerId);
+  cameraOverlayEl.classList.add('dragging');
+});
+
+cameraOverlayEl.addEventListener('pointermove', (event) => {
+  if (!draggingCamera) return;
+  const bounds = cameraOverlayEl.parentElement?.getBoundingClientRect();
+  if (!bounds) return;
+  const nextX = Math.max(8, Math.min(bounds.width - cameraOverlayEl.offsetWidth - 8, event.clientX - bounds.left - dragOffset.x));
+  const nextY = Math.max(8, Math.min(bounds.height - cameraOverlayEl.offsetHeight - 8, event.clientY - bounds.top - dragOffset.y));
+  cameraOverlayEl.style.left = `${nextX}px`;
+  cameraOverlayEl.style.top = `${nextY}px`;
+});
+
+cameraOverlayEl.addEventListener('pointerup', () => {
+  draggingCamera = false;
+  cameraOverlayEl.classList.remove('dragging');
+});
 
 copyBtn.addEventListener('click', async () => {
   if (!shareLinkEl.value) return;

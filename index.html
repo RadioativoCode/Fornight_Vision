@@ -17,13 +17,12 @@
 
       <main>
         <section class="controls">
-          <div class="control-group">
-            <label for="source">Fonte</label>
-            <div class="select-wrap">
-              <select id="source">
-                <option value="screen" selected>🖥️ Tela</option>
-                <option value="camera">📷 Câmera</option>
-              </select>
+          <div class="control-group source-control">
+            <label>Fonte da transmissão</label>
+            <div class="source-options">
+              <button class="source-option active" data-source="screen">🖥️ <span>Tela</span></button>
+              <button class="source-option" data-source="camera">📷 <span>Câmera</span></button>
+              <button class="source-option" data-source="both">✨ <span>Tela + câmera</span></button>
             </div>
           </div>
           <div class="control-group">
@@ -51,6 +50,7 @@
 
         <div class="video-container">
           <video id="video" autoplay playsinline muted></video>
+          <video id="camera-overlay" class="camera-overlay" autoplay playsinline muted hidden></video>
           <div id="placeholder" class="placeholder">
             <img src="/src/img/banner_thumb.png" alt="" class="placeholder-img" />
             <p>A transmissão aparecerá aqui</p>
@@ -74,6 +74,25 @@
           </p>
         </section>
       </main>
+
+      <div id="camera-modal" class="camera-modal" hidden>
+        <div class="camera-dialog">
+          <div class="modal-heading">
+            <div>
+              <span class="eyebrow">Fornight Vision</span>
+              <h2>Escolha sua câmera</h2>
+            </div>
+            <button id="close-camera" class="icon-button" aria-label="Fechar">×</button>
+          </div>
+          <p class="modal-copy">Selecione uma câmera para visualizar o preview antes de transmitir.</p>
+          <div id="camera-list" class="camera-list"></div>
+          <video id="camera-preview" class="camera-preview" autoplay playsinline muted></video>
+          <div class="modal-actions">
+            <button id="cancel-camera" class="secondary">Cancelar</button>
+            <button id="confirm-camera" class="primary" disabled>Usar esta câmera</button>
+          </div>
+        </div>
+      </div>
 
       <footer class="legal">
         <a href="/terms" target="_blank" rel="noopener">Termos de Serviço</a>

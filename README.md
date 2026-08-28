@@ -20,6 +20,14 @@ O app é uma **Discord Activity** (Embedded App SDK). Ele roda dentro de uma cal
 - **Transmissor**: captura a fonte, publica o vídeo na sala do LiveKit (com FPS/bitrate escolhidos) e gera o link.
 - **Espectador**: entra pelo link, conecta na mesma sala do LiveKit e assiste.
 
+### Seleção de tela e câmera
+
+- **Tela**: o botão chama `getDisplayMedia()`. O navegador/Discord abre o seletor nativo com as telas inteiras e janelas disponíveis, incluindo as previews fornecidas pelo sistema.
+- **Câmera**: o app lista as webcams autorizadas, mostra um preview e permite escolher o dispositivo antes de iniciar.
+- **Tela + câmera**: ambas são publicadas no LiveKit; a câmera aparece como miniatura arrastável sobre o preview local.
+
+Por segurança, uma página web não pode enumerar ou capturar todas as janelas do Windows por conta própria. Para uma galeria totalmente personalizada de janelas, seria necessário um aplicativo desktop auxiliar (Electron ou Tauri) com permissão de captura do sistema.
+
 ---
 
 ## 📁 Estrutura
