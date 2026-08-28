@@ -51,6 +51,19 @@ function setStatus(text: string, kind: 'ok' | 'err' | 'info' = 'info') {
   statusEl.className = `status ${kind}`;
 }
 
+async function withTimeout<T>(operation: Promise<T>, label: string, timeoutMs = 15000): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} demorou mais de 15 segundos`)), timeoutMs);
+  });
+
+  try {
+    return await Promise.race([operation, timeout]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 function setBroadcasting(on: boolean) {
   startBtn.disabled = on;
   stopBtn.disabled = !on;
@@ -81,21 +94,29 @@ async function setupDiscord() {
     response_type: 'code',
     state: '',
     prompt: 'none',
-    // 'identify' funciona em servidores e DMs. 'guilds' pode falhar em chamadas privadas.
-    scope: ['identify'],
+    // Esses escopos são necessários para autenticar uma Discord Activity.
+    scope: ['identify', 'applications.commands'],
   });
 
-  const response = await fetch('/api/token', {
+  setStatus('Validando sessão...');
+  const response = await withTimeout(fetch('/api/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ code }),
-  });
-  const { access_token } = await response.json();
+  }), 'A API de autenticação');
+  if (!response.ok) {
+    throw new Error(`A API de autenticação respondeu HTTP ${response.status}`);
+  }
+  const { access_token } = await response.json() as { access_token?: string };
   if (!access_token) {
     throw new Error('Falha ao obter access_token do Discord');
   }
 
-  const auth = await discordSdk.commands.authenticate({ access_token });
+  setStatus('Finalizando conexão com o Discord...');
+  const auth = await withTimeout(
+    discordSdk.commands.authenticate({ access_token }),
+    'A autenticação do Discord',
+  );
   identity = auth.user.username;
 
   // channelId/guildId vêm prontos no SDK
