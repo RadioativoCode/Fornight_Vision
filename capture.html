@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Capturar transmissão — Fornight Vision</title>
+  </head>
+  <body>
+    <main class="capture-app">
+      <header class="capture-header">
+        <div class="brand"><img src="/src/img/logo.png" alt="" /><span>Fornight Vision</span></div>
+        <span id="status" class="status">Pronto para capturar</span>
+      </header>
+
+      <section class="capture-layout">
+        <div class="preview-wrap">
+          <video id="screen-preview" autoplay playsinline muted></video>
+          <video id="camera-overlay" autoplay playsinline muted hidden></video>
+          <div id="empty-preview" class="empty-preview">A transmissão aparecerá aqui</div>
+        </div>
+
+        <aside class="panel">
+          <div>
+            <span class="eyebrow">Capturador externo</span>
+            <h1>Escolha o que transmitir</h1>
+            <p class="muted">O navegador abrirá o seletor oficial de telas e janelas.</p>
+          </div>
+
+          <div class="field">
+            <label for="mode">Fonte</label>
+            <select id="mode">
+              <option value="screen">Tela ou janela</option>
+              <option value="camera">Câmera</option>
+              <option value="both">Tela + câmera</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="fps">Quadros por segundo</label>
+            <select id="fps"><option value="15">15 FPS</option><option value="30" selected>30 FPS</option><option value="60">60 FPS</option></select>
+          </div>
+          <div class="field">
+            <label for="quality">Qualidade</label>
+            <select id="quality"><option value="1000000">1 Mbps</option><option value="2500000" selected>2.5 Mbps</option><option value="5000000">5 Mbps</option><option value="8000000">8 Mbps</option></select>
+          </div>
+          <label class="check"><input id="audio" type="checkbox" /> Compartilhar áudio da tela/janela</label>
+          <button id="start" class="primary">Escolher fonte e transmitir</button>
+          <button id="stop" class="secondary" disabled>Parar transmissão</button>
+          <p class="muted small">Você pode voltar ao Discord depois de iniciar. Esta aba precisa continuar aberta durante a transmissão.</p>
+        </aside>
+      </section>
+    </main>
+    <script type="module" src="/src/capture.ts"></script>
+  </body>
+</html>

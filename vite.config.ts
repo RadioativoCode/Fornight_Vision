@@ -16,5 +16,11 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    rollupOptions: {
+      input: {
+        activity: 'index.html',
+        capture: 'capture.html',
+      },
+    },
   },
 });

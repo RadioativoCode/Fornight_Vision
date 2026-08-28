@@ -26,7 +26,9 @@ O app é uma **Discord Activity** (Embedded App SDK). Ele roda dentro de uma cal
 - **Câmera**: o app lista as webcams autorizadas, mostra um preview e permite escolher o dispositivo antes de iniciar.
 - **Tela + câmera**: ambas são publicadas no LiveKit; a câmera aparece como miniatura arrastável sobre o preview local.
 
-Por segurança, uma página web não pode enumerar ou capturar todas as janelas do Windows por conta própria. Para uma galeria totalmente personalizada de janelas, seria necessário um aplicativo desktop auxiliar (Electron ou Tauri) com permissão de captura do sistema.
+Por segurança, uma página web não pode enumerar ou capturar todas as janelas do Windows por conta própria. Além disso, o Discord aplica uma Permissions Policy que bloqueia `display-capture` dentro do iframe da Activity. Portanto, a Activity web não consegue fazer captura própria de tela no Discord, mesmo com HTTPS e Vercel.
+
+Para cumprir a proposta de não usar o Go Live do Discord, a arquitetura correta é um app desktop auxiliar em Electron ou Tauri. Esse app captura monitores/janelas usando a API do sistema, envia as faixas de vídeo (e, opcionalmente, áudio) ao LiveKit e a Activity mostra o estado, a sala e os controles. A câmera pode continuar sendo capturada na Activity quando o Discord permitir `camera`; a captura de tela, porém, precisa do auxiliar desktop.
 
 ---
 
@@ -182,6 +184,10 @@ Teste a URL em uma janela anônima. Ela deve mostrar a interface do Fornight Vis
 ### Link avulso
 
 Um link como `https://SEU-PROJETO.vercel.app/?room=...` não consegue descobrir ou entrar na sua call do Discord. Ele funciona como página de espectador e entra diretamente na sala LiveKit. Para transmitir dentro de um servidor ou DM, abra a atividade pelo botão **Atividades** dentro da call; o Discord fornecerá o `frame_id` e o `channelId` necessários.
+
+### Captura híbrida
+
+Quando o usuário escolhe **Tela** ou **Tela + câmera** dentro da Activity, o botão abre `/capture` em uma aba externa. Essa página é necessária porque somente o navegador em primeiro plano pode solicitar `getDisplayMedia()` e mostrar o seletor nativo de monitores e janelas. A aba precisa permanecer aberta enquanto a transmissão estiver ativa.
 
 ---
 

@@ -140,10 +140,17 @@ async function setupDiscord() {
 // ---- Captura da fonte (tela ou câmera) usando APIs nativas ----
 async function captureScreen(fps: number): Promise<MediaStream> {
   // A lista de monitores e janelas é fornecida pelo seletor nativo do navegador/Discord.
-  return await navigator.mediaDevices.getDisplayMedia({
-    video: { frameRate: { ideal: fps } },
-    audio: false,
-  });
+  try {
+    return await navigator.mediaDevices.getDisplayMedia({
+      video: { frameRate: { ideal: fps } },
+      audio: false,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'NotAllowedError') {
+      throw new Error('O Discord bloqueia captura de tela dentro da Activity. Para transmitir sua tela, use o app desktop auxiliar do Fornight Vision.');
+    }
+    throw error;
+  }
 }
 
 async function captureCamera(fps: number): Promise<MediaStream> {
@@ -214,6 +221,14 @@ async function startBroadcast() {
     setStatus('Capturando fonte...');
     const fps = Number(fpsSelect.value);
     const bitrate = Number(qualitySelect.value);
+
+    if (selectedSource !== 'camera' && discordSdk) {
+      const captureUrl = `${window.location.origin}/capture?room=${encodeURIComponent(channelId)}&identity=${encodeURIComponent(identity)}&mode=${selectedSource}`;
+      await discordSdk.commands.openExternalLink({ url: captureUrl });
+      setStatus('Capturador aberto em uma aba externa. Mantenha-o aberto durante a transmissão.', 'ok');
+      shareLinkEl.value = `${window.location.origin}?room=${encodeURIComponent(channelId)}`;
+      return;
+    }
 
     if (selectedSource !== 'screen') {
       const confirmed = await openCameraModal(fps);
