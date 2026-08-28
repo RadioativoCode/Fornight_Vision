@@ -5,6 +5,9 @@ import './style.css';
 const CLIENT_ID = import.meta.env.VITE_DISCORD_CLIENT_ID as string | undefined;
 const LIVEKIT_URL = (import.meta.env.VITE_LIVEKIT_URL as string | undefined) ?? '';
 const isDiscordActivity = new URLSearchParams(window.location.search).has('frame_id');
+const livekitUrl = isDiscordActivity
+  ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/livekit`
+  : LIVEKIT_URL;
 
 // ---- Overlay de erro (evita tela branca) ----
 const errorOverlay = document.getElementById('error-overlay') as HTMLDivElement;
@@ -216,6 +219,27 @@ async function openCameraModal(fps: number): Promise<boolean> {
 }
 
 // ---- Transmissão ----
+async function connectLiveKit(roomName: string): Promise<Room> {
+  if (!livekitUrl) throw new Error('VITE_LIVEKIT_URL não está disponível no build da Activity.');
+  const tokenResponse = await withTimeout(fetch('/api/livekit-token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ identity, room: roomName }),
+  }), 'A API do LiveKit');
+  if (!tokenResponse.ok) throw new Error(`A API do LiveKit respondeu HTTP ${tokenResponse.status}`);
+  const { token } = await tokenResponse.json() as { token?: string };
+  if (!token) throw new Error('A API do LiveKit não retornou um token.');
+  room = new Room();
+  try {
+    await withTimeout(room.connect(livekitUrl, token), 'A conexão com o LiveKit');
+  } catch (error) {
+    room.disconnect();
+    room = null;
+    throw new Error('O Discord bloqueou a conexão com o LiveKit. Adicione o mapeamento /livekit no Developer Portal.');
+  }
+  return room;
+}
+
 async function startBroadcast() {
   try {
     setStatus('Capturando fonte...');
@@ -260,22 +284,10 @@ async function startBroadcast() {
 
     setStatus('Conectando à sala de transmissão...');
 
-    // Conecta ao LiveKit
-    const tokenRes = await fetch('/api/livekit-token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identity, room: channelId }),
-    });
-    const { token } = await tokenRes.json();
-    if (!token) {
-      throw new Error('Falha ao obter token do LiveKit');
-    }
-
-    room = new Room();
-    await room.connect(LIVEKIT_URL, token);
+    const activeRoom = await connectLiveKit(channelId);
 
     // Publica o vídeo com FPS e bitrate escolhidos
-    await room.localParticipant.publishTrack(videoTrack, {
+    await activeRoom.localParticipant.publishTrack(videoTrack, {
       videoEncoding: {
         maxBitrate: bitrate,
         maxFramerate: fps,
@@ -288,7 +300,7 @@ async function startBroadcast() {
       'ok',
     );
     if (cameraTrack && cameraTrack !== videoTrack) {
-      await room.localParticipant.publishTrack(cameraTrack, {
+      await activeRoom.localParticipant.publishTrack(cameraTrack, {
         videoEncoding: {
           maxBitrate: Math.floor(bitrate / 2),
           maxFramerate: fps,
@@ -331,18 +343,8 @@ async function watchStream() {
   const roomName = params.get('room') || channelId;
 
   setStatus('Entrando como espectador...');
-  const tokenRes = await fetch('/api/livekit-token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ identity, room: roomName }),
-  });
-  const { token } = await tokenRes.json();
-  if (!token) {
-    throw new Error('Falha ao obter token do LiveKit');
-  }
-
-  room = new Room();
-  room.on('trackSubscribed', (track) => {
+  const activeRoom = await connectLiveKit(roomName);
+  activeRoom.on('trackSubscribed', (track) => {
     if (track.kind === 'video') {
       const el = track.attach();
       el.style.width = '100%';
@@ -352,7 +354,6 @@ async function watchStream() {
     }
   });
 
-  await room.connect(LIVEKIT_URL, token);
   setStatus('Assistindo transmissão', 'ok');
 }
 

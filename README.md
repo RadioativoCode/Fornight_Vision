@@ -119,8 +119,12 @@ O servidor Express serve o frontend buildado e a API na mesma porta.
    - `http://localhost:3000` (desenvolvimento)
    - `https://SEU-DOMINIO.com` (produção)
 6. Em **General → URL Mappings → Mapeamento de raízes**, use prefixo `/` e, no alvo, apenas o hostname de produção, sem `https://` (ex.: `fornight-vision-pe1mrrn8b-radioativo.vercel.app`). Não use `localhost:3000` em produção.
-7. Em **Rich Presence → Rich Presence Assets**, adicione um ícone (opcional, para a imagem da atividade).
-8. Em **General**, marque a opção **"Activity"** / habilite o **Embedded App SDK** se solicitado.
+7. Adicione um **Mapeamento de caminho proxy** para o LiveKit:
+   - **Prefixo**: `/livekit`
+   - **Alvo**: `fornight-vision-szgihcdg.livekit.cloud`
+   - não inclua `https://` no alvo
+8. Em **Rich Presence → Rich Presence Assets**, adicione um ícone (opcional, para a imagem da atividade).
+9. Em **General**, marque a opção **"Activity"** / habilite o **Embedded App SDK** se solicitado.
 
 > 💡 Para testar localmente, o Discord exige HTTPS. Use um túnel como [ngrok](https://ngrok.com) ou [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/):
 > ```bash
