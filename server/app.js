@@ -49,9 +49,12 @@ app.post('/api/token', async (req, res) => {
 
 // Gera um token de acesso ao LiveKit para entrar na sala
 app.post('/api/livekit-token', async (req, res) => {
-  const { identity, room } = req.body;
+  const { identity, room, publish = false } = req.body;
   if (!identity || !room) {
     return res.status(400).json({ error: 'identity e room são obrigatórios' });
+  }
+  if (!/^[a-zA-Z0-9_-]{1,100}$/.test(identity) || !/^[a-zA-Z0-9_-]{1,100}$/.test(room)) {
+    return res.status(400).json({ error: 'identity e room possuem formato inválido' });
   }
 
   try {
@@ -62,7 +65,7 @@ app.post('/api/livekit-token', async (req, res) => {
     at.addGrant({
       roomJoin: true,
       room,
-      canPublish: true,
+      canPublish: publish === true,
       canSubscribe: true,
     });
     const token = await at.toJwt();

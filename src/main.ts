@@ -35,6 +35,7 @@ const discordSdk = isDiscordActivity && CLIENT_ID ? new DiscordSDK(CLIENT_ID) : 
 // ---- Elementos da UI ----
 const videoEl = document.getElementById('video') as HTMLVideoElement;
 const cameraOverlayEl = document.getElementById('camera-overlay') as HTMLVideoElement;
+const videoContainer = document.querySelector('.video-container') as HTMLDivElement;
 const placeholderEl = document.getElementById('placeholder') as HTMLDivElement;
 const startBtn = document.getElementById('start') as HTMLButtonElement;
 const stopBtn = document.getElementById('stop') as HTMLButtonElement;
@@ -89,8 +90,8 @@ function setBroadcasting(on: boolean) {
 
 // ---- Autenticação com o Discord ----
 async function setupDiscord() {
-  if (!LIVEKIT_URL) {
-    throw new Error('VITE_LIVEKIT_URL não configurado no Vercel. Adicione a variável e faça um novo redeploy.');
+  if (!livekitUrl) {
+    throw new Error('A URL do LiveKit não está disponível. Confira VITE_LIVEKIT_URL no Vercel.');
   }
 
   // Links públicos não têm contexto de call; eles entram diretamente na sala LiveKit.
@@ -132,7 +133,7 @@ async function setupDiscord() {
     discordSdk.commands.authenticate({ access_token }),
     'A autenticação do Discord',
   );
-  identity = auth.user.username;
+  identity = auth.user.id;
 
   // channelId/guildId vêm prontos no SDK
   channelId = discordSdk.channelId ?? 'sala';
@@ -219,12 +220,12 @@ async function openCameraModal(fps: number): Promise<boolean> {
 }
 
 // ---- Transmissão ----
-async function connectLiveKit(roomName: string): Promise<Room> {
+async function connectLiveKit(roomName: string, publish = false): Promise<Room> {
   if (!livekitUrl) throw new Error('VITE_LIVEKIT_URL não está disponível no build da Activity.');
   const tokenResponse = await withTimeout(fetch('/api/livekit-token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ identity, room: roomName }),
+    body: JSON.stringify({ identity, room: roomName, publish }),
   }), 'A API do LiveKit');
   if (!tokenResponse.ok) throw new Error(`A API do LiveKit respondeu HTTP ${tokenResponse.status}`);
   const { token } = await tokenResponse.json() as { token?: string };
@@ -247,7 +248,7 @@ async function startBroadcast() {
     const bitrate = Number(qualitySelect.value);
 
     if (selectedSource !== 'camera' && discordSdk) {
-      const captureUrl = `${window.location.origin}/capture?room=${encodeURIComponent(channelId)}&identity=${encodeURIComponent(identity)}&mode=${selectedSource}`;
+      const captureUrl = `${window.location.origin}/capture?room=${encodeURIComponent(channelId)}&identity=${encodeURIComponent(identity)}&mode=${selectedSource}&fps=${fps}&quality=${bitrate}`;
       await discordSdk.commands.openExternalLink({ url: captureUrl });
       setStatus('Capturador aberto em uma aba externa. Mantenha-o aberto durante a transmissão.', 'ok');
       shareLinkEl.value = `${window.location.origin}?room=${encodeURIComponent(channelId)}`;
@@ -284,7 +285,7 @@ async function startBroadcast() {
 
     setStatus('Conectando à sala de transmissão...');
 
-    const activeRoom = await connectLiveKit(channelId);
+    const activeRoom = await connectLiveKit(channelId, true);
 
     // Publica o vídeo com FPS e bitrate escolhidos
     await activeRoom.localParticipant.publishTrack(videoTrack, {
@@ -344,14 +345,20 @@ async function watchStream() {
 
   setStatus('Entrando como espectador...');
   const activeRoom = await connectLiveKit(roomName);
+  let remoteVideoCount = 0;
   activeRoom.on('trackSubscribed', (track) => {
     if (track.kind === 'video') {
       const el = track.attach();
-      el.style.width = '100%';
-      el.style.height = '100%';
-      videoEl.replaceWith(el);
+      remoteVideoCount += 1;
+      el.className = remoteVideoCount === 1 ? 'remote-video' : 'remote-video remote-secondary';
+      videoContainer.append(el);
       placeholderEl.style.display = 'none';
+    } else if (track.kind === 'audio') {
+      videoContainer.append(track.attach());
     }
+  });
+  activeRoom.on('trackUnsubscribed', (track) => {
+    track.detach().forEach((element) => element.remove());
   });
 
   setStatus('Assistindo transmissão', 'ok');

@@ -9,18 +9,18 @@ const livekitUrl = import.meta.env.VITE_LIVEKIT_URL as string | undefined;
 const screenPreview = document.getElementById('screen-preview') as HTMLVideoElement;
 const cameraOverlay = document.getElementById('camera-overlay') as HTMLVideoElement;
 const emptyPreview = document.getElementById('empty-preview') as HTMLDivElement;
-const modeSelect = document.getElementById('mode') as HTMLSelectElement;
-const fpsSelect = document.getElementById('fps') as HTMLSelectElement;
-const qualitySelect = document.getElementById('quality') as HTMLSelectElement;
 const audioCheck = document.getElementById('audio') as HTMLInputElement;
 const startButton = document.getElementById('start') as HTMLButtonElement;
 const stopButton = document.getElementById('stop') as HTMLButtonElement;
 const status = document.getElementById('status') as HTMLSpanElement;
+const sourceSummary = document.getElementById('source-summary') as HTMLSpanElement;
+const settingsSummary = document.getElementById('settings-summary') as HTMLSpanElement;
 
-const requestedMode = params.get('mode');
-if (requestedMode === 'screen' || requestedMode === 'camera' || requestedMode === 'both') {
-  modeSelect.value = requestedMode;
-}
+const mode = params.get('mode') === 'camera' || params.get('mode') === 'both' ? params.get('mode') : 'screen';
+const fps = Number(params.get('fps')) || 30;
+const bitrate = Number(params.get('quality')) || 2500000;
+sourceSummary.textContent = mode === 'both' ? 'Tela + câmera' : mode === 'camera' ? 'Câmera' : 'Tela ou janela';
+settingsSummary.textContent = `${fps} FPS · ${(bitrate / 1_000_000).toFixed(1)} Mbps`;
 
 let room: Room | null = null;
 let stream: MediaStream | null = null;
@@ -35,7 +35,7 @@ async function getToken() {
   const response = await fetch('/api/livekit-token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ identity, room: roomName }),
+    body: JSON.stringify({ identity, room: roomName, publish: true }),
   });
   if (!response.ok) throw new Error(`API LiveKit respondeu HTTP ${response.status}`);
   const data = await response.json() as { token?: string };
@@ -45,10 +45,6 @@ async function getToken() {
 
 async function startCapture() {
   if (!livekitUrl) throw new Error('VITE_LIVEKIT_URL não foi incorporada neste deploy');
-  const mode = modeSelect.value;
-  const fps = Number(fpsSelect.value);
-  const bitrate = Number(qualitySelect.value);
-
   setStatus('Escolha uma tela ou janela no seletor do navegador...');
   const screenStream = mode === 'camera' ? null : await navigator.mediaDevices.getDisplayMedia({
     video: { frameRate: { ideal: fps } },
@@ -80,9 +76,6 @@ async function startCapture() {
 
   startButton.disabled = true;
   stopButton.disabled = false;
-  modeSelect.disabled = true;
-  fpsSelect.disabled = true;
-  qualitySelect.disabled = true;
   audioCheck.disabled = true;
   setStatus(`Transmitindo ${mode === 'both' ? 'tela + câmera' : mode}`);
   screenTrack?.addEventListener('ended', stopCapture);
@@ -102,9 +95,6 @@ function stopCapture() {
   emptyPreview.style.display = 'flex';
   startButton.disabled = false;
   stopButton.disabled = true;
-  modeSelect.disabled = false;
-  fpsSelect.disabled = false;
-  qualitySelect.disabled = false;
   audioCheck.disabled = false;
   setStatus('Transmissão encerrada');
 }

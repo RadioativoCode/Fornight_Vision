@@ -548,3 +548,26 @@ button.danger:hover:not(:disabled) {
     align-items: flex-start;
   }
 }
+
+.video-container .remote-video {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  background: #000;
+}
+
+.video-container .remote-video.remote-secondary {
+  inset: auto 18px 18px auto;
+  width: 24%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  z-index: 3;
+  object-fit: cover;
+  border: 2px solid #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--accent);
+}
