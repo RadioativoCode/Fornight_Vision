@@ -158,6 +158,12 @@ git push origin main
    - **Privacy Policy URL**: `https://SEU-PROJETO.vercel.app/privacy`
 3. Pronto! Entre numa call → Atividades 🚀 → **Fornight Vision**.
 
+### Importante: Deployment Protection
+
+O domínio usado pelo Discord precisa responder diretamente com o HTML da Activity. No Vercel, abra **Settings → Deployment Protection** e desative a proteção por senha/login para **Production**. Caso contrário, o Vercel responde com `X-Frame-Options: DENY` e o Discord mostra `ERR_BLOCKED_BY_RESPONSE` ao tentar abrir o app dentro do iframe.
+
+Teste a URL em uma janela anônima. Ela deve mostrar a interface do Fornight Vision, sem pedir login do Vercel. Também confirme que o **URL Mapping** do Discord aponta exatamente para esse mesmo domínio.
+
 ### Verificação antes de testar no Discord
 
 - Abra a URL de produção em uma janela anônima. Ela deve mostrar o Fornight Vision, e não **Login – Vercel**. Se aparecer login, vá em **Vercel → Settings → Deployment Protection** e desative a proteção para o deployment de produção, ou use um domínio público sem autenticação.

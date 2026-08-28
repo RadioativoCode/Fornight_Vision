@@ -2,6 +2,21 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'self' https://discord.com https://*.discord.com https://*.discordsays.com"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(self \"https://discord.com\" \"https://*.discordsays.com\"), microphone=(self \"https://discord.com\" \"https://*.discordsays.com\"), display-capture=(self \"https://discord.com\" \"https://*.discordsays.com\")"
+        }
+      ]
+    }
+  ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index" },
     { "source": "/terms", "destination": "/terms.html" },
