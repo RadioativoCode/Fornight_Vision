@@ -571,3 +571,48 @@ button.danger:hover:not(:disabled) {
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--accent);
 }
+
+.video-toolbar {
+  position: absolute;
+  inset: auto 12px 12px 12px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px 8px 12px;
+  color: var(--muted);
+  background: rgba(15, 10, 30, 0.82);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.video-container:hover .video-toolbar,
+.video-container:focus-within .video-toolbar {
+  opacity: 1;
+}
+
+.video-tool {
+  padding: 4px 10px;
+  color: var(--text);
+  background: var(--bg-3);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.video-tool:hover {
+  background: var(--accent);
+}
+
+.video-container.expanded {
+  position: fixed;
+  inset: 18px;
+  z-index: 50;
+  width: auto;
+  height: auto;
+  aspect-ratio: auto;
+  margin: 0;
+  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.8);
+}

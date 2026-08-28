@@ -47,6 +47,8 @@ const statusEl = document.getElementById('status') as HTMLDivElement;
 const shareLinkEl = document.getElementById('share-link') as HTMLInputElement;
 const copyBtn = document.getElementById('copy') as HTMLButtonElement;
 const cameraModal = document.getElementById('camera-modal') as HTMLDivElement;
+const viewerCountEl = document.getElementById('viewer-count') as HTMLSpanElement;
+const expandVideoBtn = document.getElementById('expand-video') as HTMLButtonElement;
 const cameraList = document.getElementById('camera-list') as HTMLDivElement;
 const cameraPreview = document.getElementById('camera-preview') as HTMLVideoElement;
 const closeCameraBtn = document.getElementById('close-camera') as HTMLButtonElement;
@@ -61,6 +63,7 @@ let channelId = 'sala';
 let selectedSource: 'screen' | 'camera' | 'both' = 'screen';
 let selectedCameraId = '';
 let cameraPreviewStream: MediaStream | null = null;
+let remoteVideoCount = 0;
 let cameraOverlayPosition = { x: 24, y: 24 };
 
 function setStatus(text: string, kind: 'ok' | 'err' | 'info' = 'info') {
@@ -221,7 +224,7 @@ async function openCameraModal(fps: number): Promise<boolean> {
 }
 
 // ---- Transmissão ----
-async function connectLiveKit(roomName: string, publish = false): Promise<Room> {
+async function connectLiveKit(roomName: string, publish = false, onTrack?: (track: any) => void): Promise<Room> {
   if (!livekitUrl) throw new Error('VITE_LIVEKIT_URL não está disponível no build da Activity.');
   const tokenResponse = await withTimeout(fetch('/api/livekit-token', {
     method: 'POST',
@@ -232,6 +235,16 @@ async function connectLiveKit(roomName: string, publish = false): Promise<Room> 
   const { token } = await tokenResponse.json() as { token?: string };
   if (!token) throw new Error('A API do LiveKit não retornou um token.');
   room = new Room();
+  if (onTrack) {
+    room.on('trackSubscribed', onTrack);
+    room.on('trackUnsubscribed', (track) => {
+      track.detach().forEach((element) => element.remove());
+      if (track.kind === 'video') {
+        remoteVideoCount = Math.max(0, remoteVideoCount - 1);
+        viewerCountEl.textContent = remoteVideoCount ? `${remoteVideoCount} transmissão${remoteVideoCount === 1 ? '' : 'ões'} ativa${remoteVideoCount === 1 ? '' : 's'}` : 'Nenhuma transmissão ativa';
+      }
+    });
+  }
   try {
     await withTimeout(room.connect(livekitUrl, token), 'A conexão com o LiveKit');
   } catch (error) {
@@ -253,7 +266,8 @@ async function startBroadcast() {
         throw new Error('VITE_PUBLIC_APP_URL não configurado. Adicione o domínio público do Vercel e faça um novo redeploy.');
       }
       const captureOrigin = PUBLIC_APP_URL;
-      const captureUrl = `${captureOrigin}/capture?room=${encodeURIComponent(channelId)}&identity=${encodeURIComponent(identity)}&mode=${selectedSource}&fps=${fps}&quality=${bitrate}`;
+      const captureIdentity = `${identity}-capture`;
+      const captureUrl = `${captureOrigin}/capture?room=${encodeURIComponent(channelId)}&identity=${encodeURIComponent(captureIdentity)}&mode=${selectedSource}&fps=${fps}&quality=${bitrate}`;
       await discordSdk.commands.openExternalLink({ url: captureUrl });
       setStatus('Capturador aberto em uma aba externa. Mantenha-o aberto durante a transmissão.', 'ok');
       shareLinkEl.value = `${captureOrigin}?room=${encodeURIComponent(channelId)}`;
@@ -350,21 +364,25 @@ async function watchStream() {
   const roomName = params.get('room') || channelId;
 
   setStatus('Entrando como espectador...');
-  const activeRoom = await connectLiveKit(roomName);
-  let remoteVideoCount = 0;
-  activeRoom.on('trackSubscribed', (track) => {
+  const handleTrack = (track: any) => {
     if (track.kind === 'video') {
       const el = track.attach();
       remoteVideoCount += 1;
       el.className = remoteVideoCount === 1 ? 'remote-video' : 'remote-video remote-secondary';
       videoContainer.append(el);
       placeholderEl.style.display = 'none';
+      viewerCountEl.textContent = `${remoteVideoCount} transmissão${remoteVideoCount === 1 ? '' : 'ões'} ativa${remoteVideoCount === 1 ? '' : 's'}`;
     } else if (track.kind === 'audio') {
       videoContainer.append(track.attach());
     }
-  });
-  activeRoom.on('trackUnsubscribed', (track) => {
-    track.detach().forEach((element) => element.remove());
+  };
+  const activeRoom = await connectLiveKit(roomName, false, handleTrack);
+
+  // Faixas que já existiam podem não emitir trackSubscribed novamente.
+  activeRoom.remoteParticipants.forEach((participant) => {
+    participant.trackPublications.forEach((publication) => {
+      if (publication.isSubscribed && publication.track) handleTrack(publication.track);
+    });
   });
 
   setStatus('Assistindo transmissão', 'ok');
@@ -379,6 +397,11 @@ sourceButtons.forEach((button) => {
     selectedSource = button.dataset.source as 'screen' | 'camera' | 'both';
     sourceButtons.forEach((item) => item.classList.toggle('active', item === button));
   });
+});
+
+expandVideoBtn.addEventListener('click', () => {
+  videoContainer.classList.toggle('expanded');
+  expandVideoBtn.textContent = videoContainer.classList.contains('expanded') ? '×' : '⛶';
 });
 
 let draggingCamera = false;
@@ -421,10 +444,8 @@ copyBtn.addEventListener('click', async () => {
 (async () => {
   try {
     await setupDiscord();
-    // Se veio com ?room=, entra como espectador
-    if (new URLSearchParams(window.location.search).has('room')) {
-      await watchStream();
-    }
+    // A Activity sempre acompanha a sala da call; links usam o room da URL.
+    await watchStream();
   } catch (err) {
     console.error(err);
     const msg = (err as Error)?.message || 'Erro desconhecido';
