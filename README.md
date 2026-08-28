@@ -108,7 +108,7 @@ O servidor Express serve o frontend buildado e a API na mesma porta.
 5. Em **OAuth2 → General**, adicione o redirect URI:
    - `http://localhost:3000` (desenvolvimento)
    - `https://SEU-DOMINIO.com` (produção)
-6. Em **General → URL Mappings**, adicione o **URL Mapping** apontando para o seu domínio hospedado (ex.: `https://SEU-DOMINIO.com`).
+6. Em **General → URL Mappings → Mapeamento de raízes**, use prefixo `/` e, no alvo, apenas o hostname de produção, sem `https://` (ex.: `fornight-vision-pe1mrrn8b-radioativo.vercel.app`). Não use `localhost:3000` em produção.
 7. Em **Rich Presence → Rich Presence Assets**, adicione um ícone (opcional, para a imagem da atividade).
 8. Em **General**, marque a opção **"Activity"** / habilite o **Embedded App SDK** se solicitado.
 
@@ -152,7 +152,7 @@ git push origin main
 ### 3. Configure o Discord
 1. No [Discord Developer Portal](https://discord.com/developers/applications), no seu app:
    - **OAuth2 → General**: adicione o redirect URI `https://SEU-PROJETO.vercel.app`
-   - **General → URL Mappings**: adicione o URL Mapping `https://SEU-PROJETO.vercel.app`
+   - **General → URL Mappings → Mapeamento de raízes**: prefixo `/`, alvo `SEU-PROJETO.vercel.app` (sem `https://`)
 2. Em **General → Terms of Service / Privacy Policy**, adicione as URLs:
    - **Terms of Service URL**: `https://SEU-PROJETO.vercel.app/terms`
    - **Privacy Policy URL**: `https://SEU-PROJETO.vercel.app/privacy`
@@ -169,7 +169,7 @@ Teste a URL em uma janela anônima. Ela deve mostrar a interface do Fornight Vis
 - Abra a URL de produção em uma janela anônima. Ela deve mostrar o Fornight Vision, e não **Login – Vercel**. Se aparecer login, vá em **Vercel → Settings → Deployment Protection** e desative a proteção para o deployment de produção, ou use um domínio público sem autenticação.
 - Em **Vercel → Deployments**, confira se o deployment mais recente foi criado depois de adicionar as variáveis `VITE_*`. Essas variáveis entram no bundle durante o build; apenas cadastrá-las não altera um deployment antigo.
 - Abra o arquivo JavaScript carregado pela página e confirme que o deployment é o deste repositório. Se aparecer `/_next/static/...`, o domínio está apontando para outro projeto Next.js; o build deste projeto deve carregar `/_assets/...` ou `/assets/...` e exibir o Fornight Vision.
-- No Discord, o **URL Mapping** deve apontar exatamente para essa URL pública. A Activity deve ser aberta pelo botão **Atividades** dentro da call; abrir a URL em uma aba comum não fornece `frame_id` nem `channelId`.
+- No Discord, o **Mapeamento de raízes** deve apontar exatamente para o hostname público (sem `https://`). A Activity deve ser aberta pelo botão **Atividades** dentro da call; abrir a URL em uma aba comum não fornece `frame_id` nem `channelId`.
 
 ### Link avulso
 

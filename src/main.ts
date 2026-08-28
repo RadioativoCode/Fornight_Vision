@@ -13,6 +13,7 @@ const errorReloadBtn = document.getElementById('error-reload') as HTMLButtonElem
 
 function showError(message: string) {
   console.error('[Fornight Vision]', message);
+  setStatus(`Erro: ${message}`, 'err');
   errorMessageEl.textContent = message;
   errorOverlay.hidden = false;
 }
@@ -87,7 +88,7 @@ async function setupDiscord() {
   }
 
   await discordSdk.ready();
-  setStatus('Autorizando com o Discord...');
+  setStatus(`Activity detectada no canal ${discordSdk.channelId ?? 'atual'}...`);
 
   const { code } = await discordSdk.commands.authorize({
     client_id: CLIENT_ID,
